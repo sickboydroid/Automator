@@ -1,0 +1,9 @@
+<accessibility-service
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault|flagIncludeNotImportantViews|flagReportViewIds"
+    android:canPerformGestures="true"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/automator_service_desc"
+    android:settingsActivity="com.gameofcoding.automater.activities.MainActivity"
+    android:summary="@string/automator_service_summery"/>
