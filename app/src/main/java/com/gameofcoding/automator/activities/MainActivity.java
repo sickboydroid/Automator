@@ -8,7 +8,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
 import android.text.TextUtils;
-import android.widget.Button;
+import android.widget.*;
 
 import com.gameofcoding.automator.R;
 import com.gameofcoding.automator.services.AutomatorService;
@@ -25,6 +25,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Toast.makeText(getApplicationContext(), "Fucking hard!", Toast.LENGTH_LONG).show();
         mUtils = new Utils(mContext);
         Button btnStartAutomator = findViewById(R.id.start);
         btnStartAutomator.setOnClickListener(this);

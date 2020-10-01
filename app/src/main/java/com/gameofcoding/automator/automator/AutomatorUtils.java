@@ -2,6 +2,9 @@ package com.gameofcoding.automator.automator;
 
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityEvent;
+import android.content.ComponentName;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 
 import com.gameofcoding.automator.utils.XLog;
 
@@ -20,20 +23,41 @@ public class AutomatorUtils {
 	if (nodeInfo == null) {
 	    return;
 	}
+        final String SPACE = "\n\t\t\t";
 	StringBuilder strNodeInfo = new StringBuilder();
 	strNodeInfo.append("View Debug Info: ");
-	strNodeInfo.append("\n");
+	strNodeInfo.append(SPACE);
 	strNodeInfo.append("From package: " + nodeInfo.getPackageName());
-	strNodeInfo.append("\n");
+	strNodeInfo.append(SPACE);
 	strNodeInfo.append("Classname: " + nodeInfo.getClassName());
-	strNodeInfo.append("\n");
+	strNodeInfo.append(SPACE);
 	strNodeInfo.append("ViewID: " + nodeInfo.getViewIdResourceName());
-	strNodeInfo.append("\n");
+	strNodeInfo.append(SPACE);
 	strNodeInfo.append("Text: " + nodeInfo.getText());
-	strNodeInfo.append("\n");
+	strNodeInfo.append(SPACE);
 	strNodeInfo.append("IsClickable: " + nodeInfo.isClickable());
+        strNodeInfo.append(SPACE);
 	XLog.v(TAG, strNodeInfo.toString());
     }
+    
+    public String getCurrentActivity(AccessibilityEvent event) {
+        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            if (event.getPackageName() != null && event.getClassName() != null) {
+                ComponentName componentName = new ComponentName(
+                        event.getPackageName().toString(),
+                        event.getClassName().toString());
+                ActivityInfo activityInfo = null;
+                try {
+                   activityInfo =  mAutomator.getService().getPackageManager()
+                       .getActivityInfo(componentName, 0);
+                } catch (PackageManager.NameNotFoundException e) {}
+                if (activityInfo != null)
+                    return componentName.flattenToShortString();
+            }
+        }
+        return null;
+    }
+
 
     /**
      * @see logViewhierarchy(AccessibilityNodeInfo, String)

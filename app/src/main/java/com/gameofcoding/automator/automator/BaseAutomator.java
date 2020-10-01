@@ -153,5 +153,6 @@ public abstract class BaseAutomator {
     }
 
     public abstract String getPackageName();
+    public abstract void onStart();
     public abstract void onEvent(AccessibilityEvent event);
 }
