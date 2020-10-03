@@ -1,6 +1,7 @@
 package com.gameofcoding.automator;
 
 import android.app.Application;
+
 import com.gameofcoding.automator.utils.XLog;
 
 /**
