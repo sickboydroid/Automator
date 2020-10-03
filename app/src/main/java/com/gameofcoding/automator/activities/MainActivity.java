@@ -1,14 +1,16 @@
 package com.gameofcoding.automator.activities;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.view.View;
 import android.text.TextUtils;
-import android.widget.*;
+import android.view.View;
+import android.widget.Button;
 
 import com.gameofcoding.automator.R;
 import com.gameofcoding.automator.services.AutomatorService;
@@ -25,7 +27,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toast.makeText(getApplicationContext(), "Fucking hard!", Toast.LENGTH_LONG).show();
         mUtils = new Utils(mContext);
         Button btnStartAutomator = findViewById(R.id.start);
         btnStartAutomator.setOnClickListener(this);
@@ -38,7 +39,12 @@ public class MainActivity extends Activity implements View.OnClickListener {
             mUtils.showToast("Please grant accessiblilty permission to continue.");
             final Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
             startActivity(intent);
-        }
+            return;
+        } else if(checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+                PackageManager.PERMISSION_GRANTED) {
+            mUtils.showToast("Please grant 'WRITE_EXTERNAL_STORAGE' permission in settings");
+            return;
+                }
         switch (view.getId()) {
             case R.id.start:
                 XLog.v(TAG, "Starting automator service");
@@ -57,7 +63,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
      */
     private boolean isAccessibilityServiceEnabled(Class<?> accessibilityService) {
         ComponentName expectedComponentName = new ComponentName(mContext, accessibilityService);
-        String enabledServicesSetting = Settings.Secure.getString(mContext.getContentResolver(),  Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        String enabledServicesSetting = Settings.Secure.getString(mContext.getContentResolver(),
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
         if (enabledServicesSetting == null)
             return false;
 
