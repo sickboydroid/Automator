@@ -5,18 +5,22 @@ import android.content.Context;
 import android.graphics.PixelFormat;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.accessibility.AccessibilityEvent;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Button;
-import android.widget.Toast;
 
 import com.gameofcoding.automator.R;
-import com.gameofcoding.automator.automator.AutomatorPrefs;
 import com.gameofcoding.automator.utils.XLog;
 import com.gameofcoding.automator.utils.Utils;
+import com.gameofcoding.automator.utils.FileUtils;
+
+import java.io.File;
+import java.util.List;
+import java.util.Random;
 
 public class Automator extends BaseAutomator {
     private static final String TAG = "Automator";
@@ -30,8 +34,6 @@ public class Automator extends BaseAutomator {
     private final Runnable mAutomatorThreadRunnable = new Runnable() {
         private void onStart() {
             XLog.i(TAG, "Thread: Started");
-            // TODO: Load your coordinates here
-            // AutomatorPrefs prefs = new AutomatorPrefs(getContext());
             mIsThreadRunning = true;
         }
 
@@ -45,12 +47,14 @@ public class Automator extends BaseAutomator {
         @Override
         public void run() {
             onStart();
-            while(mContinueThread) {
-                if(mCurrentActivity != null)
-                    XLog.v(TAG, mCurrentActivity);
-                partialSleep(5000);
+            while(continueThread()) {
+                sleep(500);
             }
             onStop();
+        }
+
+        public boolean continueThread() {
+            return mContinueThread;
         }
 
         /**
@@ -71,23 +75,21 @@ public class Automator extends BaseAutomator {
                 XLog.e(TAG, "partialSleep(int): Failed to wait, secs=" + secs, e);
             }	
         }
-
-
     };
     /////////////////////////////////////////////
 
     private AccessibilityEvent mLastEvent;
     private AutomatorUtils mAutomatorUtils;
-    private String mCurrentActivity;
-    private WindowManager.LayoutParams mLayoutParams;
-    private WindowManager mWindowManager;
-    private View mLayout;
     private Button mBtnStartAutomator;
     private Button mBtnStopAutomator;
     private Handler mHandler;
-    private boolean mIsThreadRunning = false;
-    private boolean mContinueThread = false;
+    private String mCurrentActivity;
     private Thread mAutomatorThread = null;
+    private View mLayout;
+    private WindowManager mWindowManager;
+    private WindowManager.LayoutParams mLayoutParams;
+    private boolean mContinueThread = false;
+    private boolean mIsThreadRunning = false;
 
     public Automator(AccessibilityService service) {
         super(service);
@@ -112,9 +114,10 @@ public class Automator extends BaseAutomator {
     @Override
     public void onEvent(AccessibilityEvent event) {
         mLastEvent = event;
+        AutomatorUtils.debugClick(mLastEvent);
         String currentActivity = mAutomatorUtils.getCurrentActivity(event);
-         if(currentActivity != null)
-             mCurrentActivity = currentActivity;
+        if(currentActivity != null)
+            mCurrentActivity = currentActivity;
     }
 
     @Override
@@ -186,7 +189,6 @@ public class Automator extends BaseAutomator {
     private boolean hasOverlay() {
         return (mLayout != null && mLayout.getParent() != null);
     }
-
 
     /**
      * Makes overlay to take all available space of screen.
