@@ -2,10 +2,10 @@ package com.gameofcoding.automator.automator;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
-import android.content.Intent;
 import android.content.Context;
-import android.content.res.Resources;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Path;
 import android.net.Uri;
 import android.provider.Settings;
@@ -20,6 +20,10 @@ public abstract class BaseAutomator {
     private static final String TAG = "BaseAutomator";
     private AccessibilityService mService;
     private Context mContext;
+
+    public abstract String getPackageName();
+    public abstract void onStart();
+    public abstract void onEvent(AccessibilityEvent event);
 
     public BaseAutomator(Context context) {
         mContext = context;
@@ -40,7 +44,13 @@ public abstract class BaseAutomator {
     }
 
     protected AccessibilityNodeInfo getRootInActiveWindow() {
-        return getService().getRootInActiveWindow();
+        int noOfTries = 0;
+        AccessibilityNodeInfo rootNode;
+        while((rootNode = getService().getRootInActiveWindow()) == null && noOfTries <= 10) {
+            sleep(200);
+            noOfTries++;
+        }
+        return rootNode;
     }
 
     /**
@@ -108,7 +118,8 @@ public abstract class BaseAutomator {
         String forceStopButtonName = null;
         try {
             String resourcesPackageName = "com.android.settings";
-            Resources resources = getContext().getPackageManager().getResourcesForApplication(resourcesPackageName);
+            Resources resources =
+                getContext().getPackageManager().getResourcesForApplication(resourcesPackageName);
             int resourceId = resources.getIdentifier("force_stop", "string", resourcesPackageName);
             if (resourceId > 0)
                 forceStopButtonName = resources.getString(resourceId);
@@ -119,15 +130,22 @@ public abstract class BaseAutomator {
         }
 
         // Click on force stop button
-        List<AccessibilityNodeInfo> nodesForceStop = getRootInActiveWindow().findAccessibilityNodeInfosByText("FORCE STOP");
+        List<AccessibilityNodeInfo> nodesForceStop =
+            getRootInActiveWindow().findAccessibilityNodeInfosByText("FORCE STOP");
         if (nodesForceStop.isEmpty())
-            nodesForceStop = getRootInActiveWindow().findAccessibilityNodeInfosByViewId("com.android.settings:id/force_stop_button");
+            nodesForceStop =
+                getRootInActiveWindow()
+                .findAccessibilityNodeInfosByViewId("com.android.settings:id/force_stop_button");
 
         if (nodesForceStop.isEmpty())
-            nodesForceStop = getRootInActiveWindow().findAccessibilityNodeInfosByText(forceStopButtonName);
+            nodesForceStop =
+                getRootInActiveWindow()
+                .findAccessibilityNodeInfosByText(forceStopButtonName);
 
         if (nodesForceStop.isEmpty())
-            nodesForceStop = getRootInActiveWindow().findAccessibilityNodeInfosByViewId("com.android.settings:id/right_button");
+            nodesForceStop = 
+                getRootInActiveWindow()
+                .findAccessibilityNodeInfosByViewId("com.android.settings:id/right_button");
 
         if(!clickAllNodes(nodesForceStop))
             return;
@@ -135,12 +153,18 @@ public abstract class BaseAutomator {
         sleep(1500); // Wait for rendering of diakog
 
         // Click on okay button from dialog
-        List<AccessibilityNodeInfo> nodesOkayButton = getRootInActiveWindow().findAccessibilityNodeInfosByText(getContext().getString(android.R.string.ok));
+        List<AccessibilityNodeInfo> nodesOkayButton =
+            getRootInActiveWindow()
+            .findAccessibilityNodeInfosByText(getContext().getString(android.R.string.ok));
         if (nodesOkayButton.isEmpty())
             // In some phones 'Ok' button is sometimes labled as 'Force Stop'.
-            nodesOkayButton = getRootInActiveWindow().findAccessibilityNodeInfosByText(forceStopButtonName);
+            nodesOkayButton =
+                getRootInActiveWindow()
+                .findAccessibilityNodeInfosByText(forceStopButtonName);
         if(nodesOkayButton.isEmpty())
-            nodesOkayButton = getRootInActiveWindow().findAccessibilityNodeInfosByViewId("android:id/button1");
+            nodesOkayButton =
+                getRootInActiveWindow()
+                .findAccessibilityNodeInfosByViewId("android:id/button1");
         clickAllNodes(nodesOkayButton);   
     }
 
@@ -151,8 +175,4 @@ public abstract class BaseAutomator {
         // Launch again the stopped packge
         launchApp(packageName);
     }
-
-    public abstract String getPackageName();
-    public abstract void onStart();
-    public abstract void onEvent(AccessibilityEvent event);
 }
