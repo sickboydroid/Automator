@@ -5,33 +5,57 @@ import android.content.Context;
 import android.graphics.PixelFormat;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.accessibility.AccessibilityEvent;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Button;
-import android.widget.Toast;
 
 import com.gameofcoding.automator.R;
-import com.gameofcoding.automator.automator.AutomatorPrefs;
 import com.gameofcoding.automator.utils.XLog;
 import com.gameofcoding.automator.utils.Utils;
+import com.gameofcoding.automator.utils.FileUtils;
+
+import java.io.File;
+import java.util.List;
+import java.util.Random;
 
 public class Automator extends BaseAutomator {
     private static final String TAG = "Automator";
 
     // TODO: Enter package name
-    private static final String PACKAGE_NAME = "package_name";
+    private static final String PACKAGE_NAME = "com.byjus.thelearningapp";
 
     /////////////////////////////////////////////
     //             Thread Runnable             //
     /////////////////////////////////////////////
     private final Runnable mAutomatorThreadRunnable = new Runnable() {
+        final File ANSWER_FILE = new File("/sdcard/Android/data/com.byjus.thelearningapp/cache/answer.txt");
+        final String SPLASH_ACTIVITY = "com.byjus.thelearningapp/com.byjus.app.onboarding.activity.SplashActivity";
+        final String HOME_ACTIVITY = "com.byjus.thelearningapp/com.byjus.app.home.activity.HomeActivity";
+        final String QUIZOO_HOME_ACTIVITY = "com.byjus.thelearningapp/com.byjus.quizzo.QuizzoHomeActivity";
+        final String SELECT_OPPONENT_ACTIVITY = "com.byjus.thelearningapp/com.byjus.quizzo.SelectOpponentActivity";
+        final String SELECT_TOPIC_ACTIVITY = "com.byjus.thelearningapp/com.byjus.quizzo.SelectTopicActivity";
+        final String START_MATCH_ACTIVITY = "com.byjus.thelearningapp/com.byjus.quizzo.StartMatchActivity";
+        final String MATCH_ACTIVITY = "com.byjus.thelearningapp/com.byjus.quizzo.MatchActivity";
+        final String MATCH_RESULT_ACTIVITY = "com.byjus.thelearningapp/com.byjus.quizzo.MatchResultActivity";
+        final String[] TOPICS = {
+            "MATH",
+            "PHYSICS",
+            "CHEMISTRY",
+            "BIOLOGY",
+            "HISTORY",
+            "GEOGRAPHY",
+            "SCIENCE",
+            "GK"
+        };
+
+        long mStartTime;
+
         private void onStart() {
             XLog.i(TAG, "Thread: Started");
-            // TODO: Load your coordinates here
-            // AutomatorPrefs prefs = new AutomatorPrefs(getContext());
             mIsThreadRunning = true;
         }
 
@@ -45,12 +69,158 @@ public class Automator extends BaseAutomator {
         @Override
         public void run() {
             onStart();
-            while(mContinueThread) {
-                if(mCurrentActivity != null)
-                    XLog.v(TAG, mCurrentActivity);
-                partialSleep(5000);
+            mStartTime = System.currentTimeMillis();
+            while(continueThread()) {
+                if(isHomeActivity()) {
+                    handleHomeActivity();
+                } else if(isQuizooHomeActivity()) {
+                    handleQuizooHomeActivity();
+                } else if(isSelectOpponentActivity()) {
+                    handleSelectOpponentActivity();
+                } else if(isSelectTopicActivity()) {
+                    handleSelectTopicActivity();
+                } else if(isStartMatchActivity()) {
+                    handleStartMatchActivity();
+                } else if(isMatchActivity()) {
+                    handleMatchActivity();
+                } else if(isMatchResultActivity()) {
+                    handleMatchResultActivity();
+                } else if(isSplashActivity()) {
+                    sleep(500);
+                }
+                restartAppIfNecessary();
             }
             onStop();
+        }
+
+        public boolean continueThread() {
+            return mContinueThread;
+        }
+
+        public void restartAppIfNecessary() {
+            long time = System.currentTimeMillis() - mStartTime;
+            time = ((time / 1000) / 60);
+            if(time >= 15) {
+                getService().performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME);
+                restartApp(getPackageName());
+                mStartTime = System.currentTimeMillis();
+                partialSleep(5);
+            }
+        }
+
+        private void handleHomeActivity() {
+            clickView("com.byjus.thelearningapp:id/backNav");
+            partialSleep(1);
+            List <AccessibilityNodeInfo> nodes = getRootInActiveWindow().findAccessibilityNodeInfosByText("Quizzo");
+            for(AccessibilityNodeInfo node : nodes) {
+                node = node.getParent();
+                if(node != null && node.isClickable() && node.isEnabled())
+                    node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            }
+            partialSleep(1);
+        }
+
+        private void handleQuizooHomeActivity() {
+            clickView("com.byjus.thelearningapp:id/btnContinue");
+            sleep(500);
+        }
+
+        private void handleSelectOpponentActivity() {
+            clickView("com.byjus.thelearningapp:id/btnContinue");
+            partialSleep(2);
+        }
+
+        private void handleSelectTopicActivity() {
+            String topic = TOPICS[new Random().nextInt(TOPICS.length)];
+            List<AccessibilityNodeInfo> nodes =  getRootInActiveWindow().findAccessibilityNodeInfosByText(topic);
+            for(AccessibilityNodeInfo node : nodes) {
+                node = node.getParent();
+                if(node != null && node.isClickable() && node.isEnabled())
+                    node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            }
+            sleep(500);
+            clickView("com.byjus.thelearningapp:id/btnContinue");
+            partialSleep(1);
+        }
+
+        private void handleStartMatchActivity() {
+            clickAt(340, 1440);
+            sleep(600);
+        }
+
+        private void handleMatchActivity() {
+            List<AccessibilityNodeInfo> options = getOptions();
+            if(options == null)
+                return;
+            if(options.size() > 1) {
+                String correctOption = getCorrectOption();
+                if(correctOption == null)
+                    return;
+                for(AccessibilityNodeInfo option : options) {
+                    if(option.getText().equals(correctOption)) {
+                        option = option.getParent();
+                        if(option != null && option.isClickable() && option.isEnabled()) {
+                            option.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                            sleep(250);
+                        }
+                        break;
+                    }
+                }
+            } 
+        }
+
+        private List<AccessibilityNodeInfo> getOptions() {
+            if(getRootInActiveWindow() != null)
+                return getRootInActiveWindow()
+                    .findAccessibilityNodeInfosByViewId("com.byjus.thelearningapp:id/tvAnswer");
+            return null;
+        }
+
+        private String getCorrectOption() {
+            try {
+                if(ANSWER_FILE.exists() && ANSWER_FILE.isFile())
+                    return FileUtils.read(ANSWER_FILE);
+            } catch(Exception e) {
+                XLog.e(TAG, "Exception occurred while reading answer file", e);
+            }
+            return null;
+        }
+
+        public void handleMatchResultActivity() {
+            clickView("com.byjus.thelearningapp:id/btnClose");
+            sleep(500);
+        }
+
+        public boolean isSplashActivity() {
+            return mCurrentActivity.equals(SPLASH_ACTIVITY);
+        }
+
+        private boolean isHomeActivity() {
+            return mCurrentActivity.equals(HOME_ACTIVITY);
+        }
+
+        private boolean isQuizooHomeActivity() {
+            return mCurrentActivity.equals(QUIZOO_HOME_ACTIVITY);
+        }
+
+        public boolean isSelectOpponentActivity() {
+            return mCurrentActivity.equals(SELECT_OPPONENT_ACTIVITY);
+        }
+
+        public boolean isSelectTopicActivity() {
+            return mCurrentActivity.equals(SELECT_TOPIC_ACTIVITY);
+        }
+
+        public boolean isStartMatchActivity() {
+            return mCurrentActivity.equals(START_MATCH_ACTIVITY);
+        }
+
+        public boolean isMatchActivity() {
+            return mCurrentActivity.equals(MATCH_ACTIVITY);
+        }
+
+        public boolean isMatchResultActivity() {
+            return mCurrentActivity.equals(MATCH_RESULT_ACTIVITY);
         }
 
         /**
@@ -112,9 +282,10 @@ public class Automator extends BaseAutomator {
     @Override
     public void onEvent(AccessibilityEvent event) {
         mLastEvent = event;
+        AutomatorUtils.debugClick(mLastEvent);
         String currentActivity = mAutomatorUtils.getCurrentActivity(event);
-         if(currentActivity != null)
-             mCurrentActivity = currentActivity;
+        if(currentActivity != null)
+            mCurrentActivity = currentActivity;
     }
 
     @Override
@@ -135,6 +306,8 @@ public class Automator extends BaseAutomator {
         if (!mIsThreadRunning) {
             mContinueThread = true;
             makeOverlayMatchParent();
+            //FIXME;------>
+            makeOverlayWrapContent();
             mAutomatorThread = new Thread(mAutomatorThreadRunnable);
             mAutomatorThread.setPriority(Thread.MAX_PRIORITY);
             mAutomatorThread.start();
