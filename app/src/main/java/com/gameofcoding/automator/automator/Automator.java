@@ -58,6 +58,21 @@ public class Automator extends BaseAutomator {
         }
 
         /**
+         * Handy method for waiting.
+         * @param from Instance of thread from where you want to wait.
+         * @param millis Waiting time
+         */
+        protected void sleep(long millis) {
+            try {
+                synchronized (this) {
+                    wait(millis);
+                }
+            } catch (InterruptedException e) {
+                XLog.e(TAG, "sleep(Object, long): Failed to wait", e);
+            }
+        }
+
+        /**
          * This method is very useful if you want to wait for a few seconds but also want
          * to check whether we are still in game and user had not asked us to stop the automation.
          *
